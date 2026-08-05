@@ -4,7 +4,7 @@ A modern, fast, and feature-rich aspect routing solver for the Thaumcraft 4 rese
 
 ## Features
 - **Instant Pathfinding:** A Prim-Dijkstra hybrid solver dynamically generates optimized routes across the hex grid instantly.
-- **Mod Support:** Built-in support for Thaumcraft 4 Base Game, GregTech, GT++, MagicBees, and Forbidden Magic aspects.
+- **Mod Support:** Built-in support for Thaumcraft 4 Base Game plus GTNH's full addon-mod aspect set -- GregTech, GT++, Blood Magic, Witchery, MagicBees, Forbidden Magic, Gadomancy, ThaumicBoots, and 15+ more.
 - **Custom Aspects:** Add custom aspects on the fly, blending parent colors to generate unique visual icons.
 - **Modern UI:** Glassmorphism design, spatial overlapping layout, drag-and-drop mechanics, and high-quality aspect graphics.
 - **Preferences:** "Use More" prioritization lets you favor certain aspects to burn through excess research points.
