@@ -28,6 +28,9 @@ export class GridRenderer {
         hexes.forEach(hexData => {
             const hexEl = document.createElement('div');
             hexEl.className = `hex state-${hexData.state}`;
+            if (hexData.state === 'has_aspect' && !hexData.isEndpoint) {
+                hexEl.classList.add('is-path');
+            }
             hexEl.dataset.q = hexData.q;
             hexEl.dataset.r = hexData.r;
 

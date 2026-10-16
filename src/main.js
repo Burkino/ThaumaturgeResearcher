@@ -6,6 +6,7 @@ import { GridRenderer } from './ui/gridRenderer.js';
 import { CustomAspectUI } from './ui/customAspect.js';
 import { AspectGraph } from './core/graph.js';
 import { Solver } from './core/solver.js';
+import { parseResearchNoteString } from './core/researchNoteParser.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize Database
@@ -161,6 +162,63 @@ document.addEventListener('DOMContentLoaded', () => {
         aspectListUI.render(); // also persists enabled aspects + grid size
         gridRenderer.render();
     };
+
+    const applyResearchNote = (input) => {
+        const note = parseResearchNoteString(input);
+        const importedCells = note.cells.map(cell => {
+            if (cell.type === 0) return { ...cell, aspectId: null };
+
+            const aspectId = cell.aspect.split(':').pop();
+            if (!db.getAspect(aspectId)) {
+                throw new Error(`Aspect "${cell.aspect}" is not available in this aspect library.`);
+            }
+            return { ...cell, aspectId };
+        });
+
+        currentRadius = note.radius;
+        gridSizeSelect.value = currentRadius;
+        grid = new HexGrid(currentRadius);
+        gridRenderer.grid = grid;
+
+        const importedCoordinates = new Set();
+        importedCells.forEach(cell => {
+            importedCoordinates.add(`${cell.q},${cell.r}`);
+            if (cell.type === 0) {
+                grid.setHexState(cell.q, cell.r, 'active_empty');
+                return;
+            }
+
+            db.toggleAspect(cell.aspectId, true);
+            grid.setHexState(cell.q, cell.r, 'has_aspect', cell.aspectId);
+            const gridCell = grid.getHex(cell.q, cell.r);
+            gridCell.isEndpoint = cell.type === 1;
+        });
+        grid.getAllHexes().forEach(cell => {
+            if (!importedCoordinates.has(`${cell.q},${cell.r}`)) {
+                grid.setHexState(cell.q, cell.r, 'inactive');
+            }
+        });
+
+        gridRenderer.selectedAspectId = null;
+        aspectListUI.clearSelection();
+        aspectListUI.render();
+        gridRenderer.render();
+    };
+
+    const researchNoteInput = document.getElementById('research-note-input');
+    const researchNoteStatus = document.getElementById('research-note-status');
+    document.getElementById('btn-import-note').addEventListener('click', () => {
+        try {
+            applyResearchNote(researchNoteInput.value);
+            researchNoteStatus.textContent = 'Research note imported.';
+            researchNoteStatus.classList.remove('error');
+            researchNoteStatus.classList.add('success');
+        } catch (error) {
+            researchNoteStatus.textContent = error.message;
+            researchNoteStatus.classList.remove('success');
+            researchNoteStatus.classList.add('error');
+        }
+    });
 
     const researchSearchInput = document.getElementById('research-search');
     const researchResults = document.getElementById('research-results');

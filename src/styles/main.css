@@ -161,6 +161,33 @@ body {
   position: relative;
 }
 
+.research-note-import textarea {
+  width: 100%;
+  resize: vertical;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  color: var(--text-main);
+  padding: 0.5rem;
+  font: inherit;
+  font-size: 0.75rem;
+}
+
+.research-note-status {
+  min-height: 1em;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.research-note-status.success {
+  color: #8fda9a;
+}
+
+.research-note-status.error {
+  color: #ff8d8d;
+}
+
 .research-results {
   position: absolute;
   top: 100%;
