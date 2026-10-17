@@ -1,5 +1,3 @@
-import { modAspects } from '../data/aspects.js';
-
 export class AspectListUI {
     constructor(db, containerId, onAspectSelected = null) {
         this.db = db;
@@ -8,7 +6,6 @@ export class AspectListUI {
         this.searchQuery = '';
         this.currentEditAspectId = null;
         this.selectedAspectId = null;
-        this.setupModToggles();
         this.setupSearch();
         this.setupModal();
         this.setupCompactToggle();
@@ -71,36 +68,6 @@ export class AspectListUI {
         }
     }
 
-    setupModToggles() {
-        const gtnh = document.getElementById('mod-gtnh');
-        gtnh.addEventListener('change', (e) => {
-            this.toggleMod('gtnh', e.target.checked);
-        });
-    }
-
-    toggleMod(modName, isEnabled) {
-        const aspects = modAspects[modName];
-        if (aspects) {
-            aspects.forEach(a => {
-                this.db.toggleAspect(a.id, isEnabled);
-            });
-        }
-        this.render();
-    }
-
-    checkModStates() {
-        // Sync the mod checkbox based on the individual aspects
-        const cb = document.getElementById('mod-gtnh');
-        if (!cb) return;
-
-        const aspects = modAspects.gtnh;
-        if (!aspects || aspects.length === 0) return;
-
-        // Are ALL of these aspects enabled?
-        const allEnabled = aspects.every(a => this.db.enabledAspects.has(a.id));
-        cb.checked = allEnabled;
-    }
-
     openEditModal(aspect) {
         this.currentEditAspectId = aspect.id;
         const modal = document.getElementById('edit-formula-modal');
@@ -135,7 +102,6 @@ export class AspectListUI {
     }
 
     render() {
-        this.checkModStates();
         this.container.classList.toggle('compact-mode', !!this.db.compactMode);
         this.container.innerHTML = '';
         const aspects = Array.from(this.db.aspects.values()).filter(a => {
@@ -144,22 +110,13 @@ export class AspectListUI {
         });
 
         // Group aspects into categories
-        const categories = {
-            'Primals': [],
-            'Base Game': [],
-            'gtnh': [],
-            'Custom Aspects': []
-        };
+        const categories = { 'Primals': [], 'Compounds': [] };
 
         aspects.forEach(a => {
             if (a.isPrimal) {
                 categories['Primals'].push(a);
-            } else if (a.isCustom) {
-                categories['Custom Aspects'].push(a);
-            } else if (!a.modName) {
-                categories['Base Game'].push(a);
             } else {
-                categories[a.modName].push(a);
+                categories['Compounds'].push(a);
             }
         });
 
@@ -192,10 +149,8 @@ export class AspectListUI {
                 const isEnabled = this.db.enabledAspects.has(aspect.id);
                 const isUseMore = this.db.useMoreAspects.has(aspect.id);
 
-                const imageUrl = aspect.isCustom ? '' : `./assets/aspects/${aspect.id}.png?v=7`;
-                const iconHtml = aspect.isCustom 
-                    ? `<div class="aspect-icon" style="background-color: ${aspect.color}; border-radius: 50%; width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.3);"></div>`
-                    : `<div class="aspect-icon color-mask" style="-webkit-mask-image: url('${imageUrl}'); mask-image: url('${imageUrl}'); background-color: ${aspect.color};"></div>`;
+                const imageUrl = `./assets/aspects/${aspect.id}.png?v=9`;
+                const iconHtml = `<div class="aspect-icon color-mask" style="-webkit-mask-image: url('${imageUrl}'); mask-image: url('${imageUrl}'); background-color: ${aspect.color};"></div>`;
 
                 item.innerHTML = `
                     <div class="aspect-item-header">
@@ -204,7 +159,6 @@ export class AspectListUI {
                             ${iconHtml}
                             <span>${aspect.name}</span>
                         </div>
-                        ${aspect.isCustom ? `<button class="delete-custom-btn" data-id="${aspect.id}" title="Delete Custom Aspect" style="background:transparent;border:none;cursor:pointer;color:red;font-size:1.1rem;opacity:0.7;">🗑️</button>` : ''}
                         ${!aspect.isPrimal ? `<button class="edit-formula-btn" data-id="${aspect.id}" title="Edit Formula">⚙️</button>` : ''}
                     </div>
                     <div class="aspect-item-controls">
@@ -241,7 +195,6 @@ export class AspectListUI {
                 const enableCb = item.querySelector('.aspect-enable');
                 enableCb.addEventListener('change', (e) => {
                     this.db.toggleAspect(aspect.id, e.target.checked);
-                    this.checkModStates(); // Update mod checkboxes
                     if (window.saveAppConfig) window.saveAppConfig();
                 });
 
@@ -250,19 +203,6 @@ export class AspectListUI {
                     this.db.toggleUseMore(aspect.id, e.target.checked);
                     if (window.saveAppConfig) window.saveAppConfig();
                 });
-
-                // Delete custom aspect
-                const delBtn = item.querySelector('.delete-custom-btn');
-                if (delBtn) {
-                    delBtn.addEventListener('click', () => {
-                        if (confirm(`Are you sure you want to delete the custom aspect "${aspect.name}"?`)) {
-                            this.db.aspects.delete(aspect.id);
-                            this.db.enabledAspects.delete(aspect.id);
-                            this.db.useMoreAspects.delete(aspect.id);
-                            this.render();
-                        }
-                    });
-                }
 
                 // Edit formula
                 const editBtn = item.querySelector('.edit-formula-btn');
@@ -292,10 +232,7 @@ export class AspectListUI {
                         
                         const renderIcon = (a) => {
                             if (!a) return `<span>?</span>`;
-                            if (a.isCustom) {
-                                return `<div class="aspect-icon" style="background-color: ${a.color}; border-radius: 50%; width: 24px; height: 24px; display: inline-block; vertical-align: middle; border: 2px solid rgba(255,255,255,0.3);"></div>`;
-                            }
-                            const url = `./assets/aspects/${a.id}.png?v=7`;
+                            const url = `./assets/aspects/${a.id}.png?v=9`;
                             return `<div class="color-mask" style="-webkit-mask-image: url('${url}'); mask-image: url('${url}'); background-color: ${a.color}; width: 24px; height: 24px; display: inline-block; vertical-align: middle;"></div>`;
                         };
                         
@@ -325,28 +262,10 @@ export class AspectListUI {
         };
 
         renderGroup('Primals', categories['Primals']);
-        renderGroup('Base Game', categories['Base Game']);
-        renderGroup('GregTech New Horizons Aspects', categories['gtnh']);
-        renderGroup('Custom Aspects', categories['Custom Aspects']);
-
-        // Update custom aspect form dropdowns
-        this.updateCustomDropdowns();
+        renderGroup('Compounds', categories['Compounds']);
 
         // Save state on any change that triggers a re-render
         if (window.saveAppConfig) window.saveAppConfig();
     }
 
-    updateCustomDropdowns() {
-        const p1 = document.getElementById('custom-aspect-parent1');
-        const p2 = document.getElementById('custom-aspect-parent2');
-        if (!p1 || !p2) return;
-
-        const options = Array.from(this.db.aspects.values())
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map(a => `<option value="${a.id}">${a.name}</option>`)
-            .join('');
-
-        p1.innerHTML = `<option value="">Parent 1</option>${options}`;
-        p2.innerHTML = `<option value="">Parent 2</option>${options}`;
-    }
 }

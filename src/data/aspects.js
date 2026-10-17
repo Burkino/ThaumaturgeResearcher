@@ -41,32 +41,6 @@ export const standardCompounds = [
     { id: 'humanus', name: 'Humanus', components: ['spiritus', 'victus'], color: '#ffd7c0' },
 ];
 
-export const modAspects = {
-    gtnh: [
-        { id: 'electrum', name: 'Electrum', components: ['potentia', 'machina'], color: '#c0eeee' },
-        { id: 'magneto', name: 'Magneto', components: ['metallum', 'iter'], color: '#c0c0c0' },
-        { id: 'aequalitas', name: 'Aequalitas', components: ['cognitio', 'ordo'], color: '#eef0ea' },
-        { id: 'vesania', name: 'Vesania', components: ['cognitio', 'vitium'], color: '#1b122c' },
-        { id: 'primordium', name: 'Primordium', components: ['vacuos', 'motus'], color: '#f7f7db' },
-        { id: 'astrum', name: 'Astrum', components: ['lux', 'primordium'], color: '#2d2c2b' },
-        { id: 'gloria', name: 'Gloria', components: ['humanus', 'iter'], color: '#ffe980' },
-        { id: 'nebrisum', name: 'Nebrisum', components: ['lucrum', 'perfodio'], color: '#eeee7e' },
-        { id: 'radio', name: 'Radio', components: ['potentia', 'lux'], color: '#c0ffc0' },
-        { id: 'strontio', name: 'Strontio', components: ['perditio', 'cognitio'], color: '#eec2b3' },
-        { id: 'tempus', name: 'Tempus', components: ['vacuos', 'ordo'], color: '#b68cff' },
-        { id: 'infernus', name: 'Infernus', components: ['ignis', 'praecantatio'], color: '#ff0000' },
-        { id: 'luxuria', name: 'Luxuria', components: ['corpus', 'fames'], color: '#ffc1ce' },
-        { id: 'desidia', name: 'Desidia', components: ['vinculum', 'spiritus'], color: '#6e6e6e' },
-        { id: 'superbia', name: 'Superbia', components: ['volatus', 'vacuos'], color: '#9639ff' },
-        { id: 'invidia', name: 'Invidia', components: ['sensus', 'fames'], color: '#00ba00' },
-        { id: 'ira', name: 'Ira', components: ['telum', 'ignis'], color: '#870404' },
-        { id: 'gula', name: 'Gula', components: ['fames', 'vacuos'], color: '#d59c46' },
-        { id: 'caelum', name: 'Caelum', components: ['vitreus', 'metallum'], color: '#5e74cf' },
-        { id: 'tabernus', name: 'Tabernus', components: ['tutamen', 'iter'], color: '#4c8569' },
-        { id: 'terminus', name: 'Terminus', components: ['lucrum', 'alienis'], color: '#b90000' }
-    ]
-};
-
 export class AspectDatabase {
     constructor() {
         this.aspects = new Map();
@@ -76,23 +50,14 @@ export class AspectDatabase {
     }
 
     loadBaseAspects() {
-        primalAspects.forEach(a => this.addAspect(a.id, a.name, [], true, false, true, a.color));
-        standardCompounds.forEach(a => this.addAspect(a.id, a.name, a.components, false, false, true, a.color));
-        
-        for (const [modName, aspects] of Object.entries(modAspects)) {
-            aspects.forEach(a => {
-                this.addAspect(a.id, a.name, a.components, false, true, false, a.color);
-                this.aspects.get(a.id).modName = modName; 
-            });
-        }
+        primalAspects.forEach(a => this.addAspect(a.id, a.name, [], true, a.color));
+        standardCompounds.forEach(a => this.addAspect(a.id, a.name, a.components, false, a.color));
     }
 
-    addAspect(id, name, components = [], isPrimal = false, isMod = false, defaultEnabled = true, color = '#ffffff') {
+    addAspect(id, name, components = [], isPrimal = false, color = '#ffffff') {
         if (!this.aspects.has(id)) {
-            this.aspects.set(id, { id, name, components, isPrimal, isMod, tier: 1, color });
-            if (defaultEnabled) {
-                this.enabledAspects.add(id);
-            }
+            this.aspects.set(id, { id, name, components, isPrimal, tier: 1, color });
+            this.enabledAspects.add(id);
         }
     }
 

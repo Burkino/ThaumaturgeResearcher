@@ -1,12 +1,11 @@
 import { AspectDatabase } from './data/aspects.js';
-import { gtnhResearch } from './data/gtnhResearch.js';
 import { AspectListUI } from './ui/aspectList.js';
 import { HexGrid } from './core/grid.js';
 import { GridRenderer } from './ui/gridRenderer.js';
-import { CustomAspectUI } from './ui/customAspect.js';
 import { AspectGraph } from './core/graph.js';
 import { Solver } from './core/solver.js';
 import { parseResearchNoteString } from './core/researchNoteParser.js';
+import { InfusionStabilityUI } from './ui/infusionStability.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize Database
@@ -17,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const config = {
             enabledAspects: Array.from(db.enabledAspects),
             useMoreAspects: Array.from(db.useMoreAspects),
-            customAspects: Array.from(db.aspects.values()).filter(a => a.isCustom),
             gridSize: currentRadius,
             compactMode: !!db.compactMode
         };
@@ -30,16 +28,17 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const config = JSON.parse(savedConfigStr);
             if (config.gridSize) currentRadius = config.gridSize;
-            if (config.customAspects) {
-                config.customAspects.forEach(a => db.aspects.set(a.id, a));
-            }
             if (config.enabledAspects) {
                 db.enabledAspects.clear();
-                config.enabledAspects.forEach(id => db.enabledAspects.add(id));
+                config.enabledAspects
+                    .filter(id => db.getAspect(id))
+                    .forEach(id => db.enabledAspects.add(id));
             }
             if (config.useMoreAspects) {
                 db.useMoreAspects.clear();
-                config.useMoreAspects.forEach(id => db.useMoreAspects.add(id));
+                config.useMoreAspects
+                    .filter(id => db.getAspect(id))
+                    .forEach(id => db.useMoreAspects.add(id));
             }
             db.compactMode = !!config.compactMode;
         } catch (e) {
@@ -52,12 +51,30 @@ document.addEventListener('DOMContentLoaded', () => {
         gridRenderer.selectedAspectId = aspectId;
     });
 
-    // 3. Initialize Custom Aspect Creator
-    const customAspectUI = new CustomAspectUI(db, aspectListUI);
-
-    // 4. Initialize Grid and Renderer
+    // 3. Initialize Grid and Renderer
     let grid = new HexGrid(currentRadius);
     let gridRenderer = new GridRenderer(grid, 'grid-container', db);
+    new InfusionStabilityUI();
+
+    const app = document.getElementById('app');
+    document.querySelectorAll('.tool-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const pageId = tab.dataset.page;
+            document.querySelectorAll('.tool-page').forEach(page => {
+                page.hidden = page.id !== pageId;
+            });
+            document.querySelectorAll('.tool-tab').forEach(button => {
+                const active = button === tab;
+                button.classList.toggle('active', active);
+                if (active) {
+                    button.setAttribute('aria-current', 'page');
+                } else {
+                    button.removeAttribute('aria-current');
+                }
+            });
+            app.classList.toggle('stability-active', pageId === 'stability-page');
+        });
+    });
 
     // Tapping anywhere that isn't an aspect (to select) or a hex (to place)
     // cancels the pending placement, so a stray tap can't drop an aspect later.
@@ -71,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 5. Reset Button
     const btnReset = document.getElementById('btn-reset');
     btnReset.addEventListener('click', () => {
-        if (!confirm("Reset all changes? This will clear custom aspects, enabled/disabled aspects, and grid size back to defaults.")) return;
+        if (!confirm("Reset all changes? This will clear enabled/disabled aspects and grid size back to defaults.")) return;
         localStorage.removeItem('thaumcraft_researcher_config');
         location.reload();
     });
@@ -86,82 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
         gridRenderer.grid = grid; // update ref
         gridRenderer.render();
     });
-
-    // 6b. GTNH Research Picker
-    const modLabels = {
-        thaumcraft: 'Thaumcraft',
-        thaumicbases: 'Thaumic Bases',
-        thaumichorizons: 'Thaumic Horizons',
-        thaumicexploration: 'Thaumic Exploration',
-        thaumicmachina: 'Thaumic Machina',
-        thaumictinkerer: 'Thaumic Tinkerer',
-        thaumicboots: 'Thaumic Boots',
-        thaumicinsurgence: 'Thaumic Insurgence',
-        thaumicenergistics: 'Thaumic Energistics',
-        taintedmagic: 'Tainted Magic',
-        gtnh_script: 'GTNH',
-        forbiddenmagic: 'Forbidden Magic',
-        automagy: 'Automagy',
-        witchinggadgets: 'Witching Gadgets',
-        emt: 'EMT',
-        botanichorizons: 'Botanic Horizons',
-        nodalmechanics: 'Nodal Mechanics',
-        warptheory: 'Warp Theory',
-        goodgenerator: 'Good Generator',
-        kekztech: 'KekzTech',
-        gadomancy: 'Gadomancy',
-        bloodmagic: 'Blood Magic',
-        witchery: 'Witchery',
-        magicbees: 'MagicBees',
-        etfuturumrequiem: 'Et Futurum Requiem',
-        extrautilities: 'Extra Utilities',
-    };
-
-    const applyResearch = (research) => {
-        const mappedRadius = Math.max(2, Math.min(5, research.radius || 3));
-        currentRadius = mappedRadius;
-        gridSizeSelect.value = currentRadius;
-
-        grid = new HexGrid(currentRadius);
-        gridRenderer.grid = grid;
-
-        research.aspects.forEach(id => db.toggleAspect(id, true));
-
-        // Evenly space the endpoints around the board's outer ring, starting
-        // at ring index 0 -- matches Thaumcraft's own research table, which
-        // (per its actual source, HexUtils.distributeRingRandomly) computes
-        // a random start offset but never applies it, so real notes always
-        // start from the same ring position for a given research.
-        let ring = grid.getRing(currentRadius);
-        if (ring.length < research.aspects.length) {
-            ring = grid.getAllHexes().filter(h => h.q !== 0 || h.r !== 0);
-        }
-        const ringSize = ring.length;
-        const spacing = ringSize / research.aspects.length;
-        const usedRingIndices = new Set();
-        research.aspects.forEach((aspectId, idx) => {
-            let ringIndex = Math.round(idx * spacing) % ringSize;
-            while (usedRingIndices.has(ringIndex)) {
-                ringIndex = (ringIndex + 1) % ringSize;
-            }
-            usedRingIndices.add(ringIndex);
-
-            const cell = ring[ringIndex];
-            if (!cell) return;
-            grid.setHexState(cell.q, cell.r, 'has_aspect', aspectId);
-            cell.isEndpoint = true;
-        });
-
-        // Deliberately no blank/gap hexes here: the real research table
-        // rolls those randomly per note, which this tool can never predict
-        // or match -- and this feature exists to solve a research, not to
-        // recreate its random layout, so every non-endpoint hex stays open
-        // pathway space for the solver to use.
-        gridRenderer.selectedAspectId = null;
-        aspectListUI.clearSelection();
-        aspectListUI.render(); // also persists enabled aspects + grid size
-        gridRenderer.render();
-    };
 
     const applyResearchNote = (input) => {
         const note = parseResearchNoteString(input);
@@ -218,49 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
             researchNoteStatus.classList.remove('success');
             researchNoteStatus.classList.add('error');
         }
-    });
-
-    const researchSearchInput = document.getElementById('research-search');
-    const researchResults = document.getElementById('research-results');
-
-    const renderResearchResults = (query) => {
-        researchResults.innerHTML = '';
-        const q = query.trim().toLowerCase();
-        if (!q) {
-            researchResults.classList.remove('visible');
-            return;
-        }
-
-        const matches = gtnhResearch.filter(r => r.name.toLowerCase().includes(q)).slice(0, 30);
-        if (matches.length === 0) {
-            researchResults.innerHTML = '<div class="research-empty">No matching research found.</div>';
-            researchResults.classList.add('visible');
-            return;
-        }
-
-        matches.forEach(r => {
-            const item = document.createElement('div');
-            item.className = 'research-result-item';
-            item.innerHTML = `
-                <div class="research-result-name">${r.name}</div>
-                <div class="research-result-meta">${modLabels[r.mod] || r.mod} &middot; ${r.aspects.length} aspects</div>
-            `;
-            item.addEventListener('click', () => {
-                applyResearch(r);
-                researchSearchInput.value = r.name;
-                researchResults.classList.remove('visible');
-            });
-            researchResults.appendChild(item);
-        });
-        researchResults.classList.add('visible');
-    };
-
-    researchSearchInput.addEventListener('input', (e) => renderResearchResults(e.target.value));
-    researchSearchInput.addEventListener('focus', (e) => {
-        if (e.target.value) renderResearchResults(e.target.value);
-    });
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.research-picker')) researchResults.classList.remove('visible');
     });
 
     // 7. Reset Hexes Button

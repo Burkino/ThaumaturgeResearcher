@@ -169,15 +169,8 @@ export class GridRenderer {
         const aspectObj = this.db.getAspect(aspectId);
         const name = aspectObj ? aspectObj.name : aspectId;
         const color = aspectObj ? aspectObj.color : '#ffffff';
-        const isCustom = aspectObj ? aspectObj.isCustom : false;
-        
-        let iconHtml = '';
-        if (isCustom) {
-            iconHtml = `<div class="hex-aspect-icon" style="background-color: ${color}; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);"></div>`;
-        } else {
-            const imageUrl = `./assets/aspects/${aspectId}.png?v=7`;
-            iconHtml = `<div class="hex-aspect-icon color-mask" style="-webkit-mask-image: url('${imageUrl}'); mask-image: url('${imageUrl}'); background-color: ${color};"></div>`;
-        }
+        const imageUrl = `./assets/aspects/${aspectId}.png?v=9`;
+        const iconHtml = `<div class="hex-aspect-icon color-mask" style="-webkit-mask-image: url('${imageUrl}'); mask-image: url('${imageUrl}'); background-color: ${color};"></div>`;
 
         label.innerHTML = `
             ${iconHtml}
