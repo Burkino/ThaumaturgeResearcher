@@ -1,4 +1,4 @@
-# Thaumcraft Researcher
+# Thaumaturge Researcher
 
 A modern aspect-routing solver for Thaumaturge research and a stability optimizer for Thaumaturge infusions.
 
@@ -12,12 +12,13 @@ A modern aspect-routing solver for Thaumaturge research and a stability optimize
 - **Mobile Friendly:** A responsive layout plus a tap-to-select/tap-to-place flow (tap an empty hex with nothing selected to toggle gaps) for phones and tablets, no dragging required.
 
 ## How to Use
-Visit the live site: [Thaumcraft Researcher](https://exaltedo2.github.io/ThaumcraftResearcher/)
+Visit the live site: [Thaumaturge Researcher](https://burkino.github.io/ThaumaturgeResearcher/)
 
-1. Drag and drop aspects from the sidebar onto the active hex grid endpoints (on mobile: tap an aspect, then tap a hex).
-2. Enable or disable aspects according to your research.
-3. Click **Research!** to instantly find the shortest path connecting all your endpoints.
-4. If you don't like a path, click "Research!" again to randomly generate alternative equal-cost paths.
+1. Hold a research note in your hand
+2. Type `/kjs hand`
+3. Click the green text to copy to your clipboard
+4. Paste the data into the "Import note" section and import the note
+5. Click "Research"
 
 ## Development
 This application was built and optimized with the assistance of Claude to provide the fastest and cleanest pathfinding experience possible.
@@ -36,7 +37,4 @@ npm run dev
 ## Credits
 - Aspect icons are the property of Azanor (creator of Thaumcraft 4).
 - HQ Aspect image masks are adapted from `universal_tc_research_solver` (MIT License).
-
-## Contact & Feedback
-If you have any suggestions, feature requests, or just want to reach out, feel free to contact me:
-- **Discord:** `exaltedo2`
+- 
