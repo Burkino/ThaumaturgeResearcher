@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/ThaumcraftResearcher/',
+  base: '/ThaumaturgeResearcher/',
   server: {
-    allowedHosts: ['desktop.tail35fe5.ts.net', 'localhost']
+    allowedHosts: ['localhost']
   }
 })
